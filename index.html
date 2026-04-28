@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRV Integral — Tienda Profesional</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --red: #e8212b;
+    --red-dim: #9b151c;
+    --gold: #c9a84c;
+    --text: #f0f0f0;
+    --muted: #888;
+    --success: #2ecc71;
+    --radius: 4px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--red);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.6rem;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+  .logo span { color: var(--red); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .cart-btn {
+    background: var(--red);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 2rem;
+  }
+
+  .tab {
+    padding: 0.9rem 1.5rem;
+    cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--red);
+    border-bottom-color: var(--red);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+  /* ── ADMIN PANEL ── */
+  #panel-admin { display: block; }
+  #panel-tienda { display: none; }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── IMPORT BOX ── */
+  .import-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .import-row {
+    display: grid;
+    grid-template-columns: 1fr 140px 140px auto;
+    gap: 0.8rem;
+    align-items: end;
+  }
+
+  @media (max-width: 700px) {
+    .import-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.6rem 0.8rem;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.9rem;
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--red);
+  }
+
+  .btn {
+    padding: 0.65rem 1.4rem;
+    border: none;
+    cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary { background: var(--red); color: white; }
+  .btn-primary:hover { background: #c41920; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--muted); }
+  .btn-danger { background: transparent; color: #e74c3c; border: 1px solid #e74c3c; }
+  .btn-danger:hover { background: #e74c3c; color: white; }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── MARKUP GLOBAL ── */
+  .markup-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .markup-bar strong {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .markup-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .markup-input-wrap input {
+    width: 80px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  .badge {
+    background: var(--gold);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+  }
+
+  /* ── PRODUCT TABLE ── */
+  .product-table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  thead th {
+    background: var(--surface2);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: var(--muted);
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody td {
+    padding: 0.8rem 1rem;
+    vertical-align: middle;
+  }
+
+  .prod-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    background: var(--surface2);
+    display: block;
+  }
+
+  .prod-thumb-placeholder {
+    width: 56px;
+    height: 56px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  .prod-title {
+    font-weight: 500;
+    max-width: 260px;
+    line-height: 1.3;
+  }
+
+  .price-ml { color: var(--muted); font-size: 0.82rem; }
+  .price-srv {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--gold);
+  }
+
+  .actions { display: flex; gap: 0.5rem; align-items: center; }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.4rem;
+  }
+  .status-active { background: var(--success); }
+  .status-hidden { background: var(--muted); }
+
+  .toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+  }
+  .toggle-switch input { display: none; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    transition: 0.2s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--red); }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .photo-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .photo-grid img.selected { border-color: var(--red); }
+  .photo-grid img:hover { border-color: var(--gold); }
+
+  .edit-field { margin-bottom: 1rem; }
+  .edit-field textarea { min-height: 80px; resize: vertical; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface2);
+    border-left: 3px solid var(--red);
+    color: var(--text);
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
+    border-radius: var(--radius);
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+    max-width: 320px;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.success { border-left-color: var(--success); }
+
+  /* ── TIENDA (storefront) ── */
+  .store-header {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+
+  .store-logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 3rem;
+    letter-spacing: 4px;
+    margin-bottom: 0.3rem;
+  }
+  .store-logo span { color: var(--red); }
+
+  .store-tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .store-filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-pill {
+    padding: 0.4rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-pill:hover, .filter-pill.active {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .product-card:hover {
+    border-color: var(--red);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,33,43,0.15);
+  }
+
+  .card-img-wrap {
+    aspect-ratio: 1;
+    background: var(--surface2);
+    overflow: hidden;
+  }
+  .card-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+  .product-card:hover .card-img-wrap img { transform: scale(1.04); }
+
+  .card-body {
+    padding: 1rem;
+  }
+  .card-title {
+    font-size: 0.88rem;
+    line-height: 1.35;
+    margin-bottom: 0.8rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-price {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--gold);
+  }
+  .card-price-original {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-decoration: line-through;
+    margin-left: 0.4rem;
+  }
+
+  .card-add {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    background: var(--red);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .card-add:hover { background: #c41920; }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  /* LOADING SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* PRODUCT DETAIL MODAL */
+  .detail-images {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+  .detail-main-img {
+    aspect-ratio: 1;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .detail-main-img img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-thumbs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .detail-thumb {
+    width: 60px; height: 60px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .detail-thumb.active { border-color: var(--red); }
+
+  .detail-price-wrap {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--surface2);
+    border-radius: var(--radius);
+  }
+  .detail-price {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+    color: var(--gold);
+  }
+  .detail-original { color: var(--muted); font-size: 0.85rem; text-decoration: line-through; margin-left: 0.5rem; }
+  .detail-desc {
+    color: #ccc;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+  }
+
+  /* SYNC PANEL */
+  .sync-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .sync-card h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sync-card p { color: var(--muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 0.8rem; }
+  .code-block {
+    background: #000;
+    border: 1px solid var(--border);
+    padding: 0.8rem 1rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #0f0;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    margin-top: 0.5rem;
+  }
+
+  #panel-sync { display: none; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SRV <span>INTEGRAL</span></div>
+  <div class="header-right">
+    <span style="font-size:0.8rem;color:var(--muted);" id="product-count">0 productos</span>
+    <button class="cart-btn" onclick="showTab('panel-tienda')">🛒 Ver Tienda</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" onclick="showTab('panel-admin',this)">⚙️ Admin</div>
+  <div class="tab" onclick="showTab('panel-tienda',this)">🏪 Tienda</div>
+  <div class="tab" onclick="showTab('panel-sync',this)">🔄 Sincronización</div>
+</nav>
+
+<main>
+
+<!-- ══════════════════ ADMIN PANEL ══════════════════ -->
+<div id="panel-admin">
+
+  <div class="section-title">📥 Importar desde MercadoLibre</div>
+
+  <div class="import-box">
+    <div class="import-row">
+      <div>
+        <label>URL de MercadoLibre</label>
+        <input type="text" id="ml-url" placeholder="https://www.mercadolibre.com.ar/..." />
+      </div>
+      <div>
+        <label>Markup %</label>
+        <input type="number" id="import-markup" value="30" min="-100" max="500" />
+      </div>
+      <div>
+        <label>Categoría</label>
+        <input type="text" id="import-cat" placeholder="Herramientas" />
+      </div>
+      <div>
+        <button class="btn btn-primary" id="import-btn" onclick="importarProducto()">
+          ⚡ IMPORTAR
+        </button>
+      </div>
+    </div>
+    <div id="import-status" style="margin-top:0.8rem;font-size:0.83rem;color:var(--muted);"></div>
+  </div>
+
+
+  <!-- ── IMPORTACIÓN MASIVA ── -->
+  <div class="import-box" style="border-color:#c9a84c33">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:1px;text-transform:uppercase;">
+          🚀 Importación Masiva — Tu tienda ML
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.2rem">
+          Seller ID: <strong style="color:var(--gold)">144622772</strong> · SRVintegral · 487 productos
+        </div>
+      </div>
+      <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap">
+        <div>
+          <label>Markup % para todos</label>
+          <input type="number" id="bulk-markup" value="30" min="-100" max="500" style="width:80px" />
+        </div>
+        <div>
+          <label>Límite de productos</label>
+          <select id="bulk-limit" style="width:120px">
+            <option value="50">50 productos</option>
+            <option value="100">100 productos</option>
+            <option value="200">200 productos</option>
+            <option value="487" selected>Todos (487)</option>
+          </select>
+        </div>
+        <div style="padding-top:1.2rem">
+          <button class="btn btn-primary" id="bulk-btn" onclick="importarMasivo()">
+            🚀 IMPORTAR TODO
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="bulk-progress" style="display:none">
+      <div style="background:var(--border);border-radius:4px;height:8px;margin-bottom:0.6rem;overflow:hidden">
+        <div id="bulk-bar" style="height:100%;background:var(--gold);width:0%;transition:width 0.3s;border-radius:4px"></div>
+      </div>
+      <div id="bulk-status" style="font-size:0.82rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <!-- Markup global -->
+  <div class="markup-bar">
+    <strong>Markup Global:</strong>
+    <div class="markup-input-wrap">
+      <input type="number" id="global-markup" value="30" min="-100" max="500" style="width:80px" onchange="recalcularPrecios()" />
+      <span>%</span>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="recalcularPrecios()">Aplicar a todos</button>
+    <span class="badge">Modo: Precio ML × (1 + markup/100)</span>
+    <div style="margin-left:auto;display:flex;gap:0.6rem;">
+      <button class="btn btn-secondary btn-sm" onclick="exportarJSON()">📤 Exportar JSON</button>
+      <button class="btn btn-secondary btn-sm" onclick="importarJSON()">📥 Cargar JSON</button>
+      <input type="file" id="json-input" accept=".json" style="display:none" onchange="cargarArchivoJSON(event)">
+    </div>
+  </div>
+
+  <div class="section-title">📦 Catálogo (<span id="cat-count">0</span> productos)</div>
+
+  <div class="product-table-wrap">
+    <table id="catalog-table">
+      <thead>
+        <tr>
+          <th>Foto</th>
+          <th>Título</th>
+          <th>Precio ML</th>
+          <th>Markup</th>
+          <th>Precio SRV</th>
+          <th>Categoría</th>
+          <th>Visible</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="catalog-body">
+        <tr>
+          <td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">
+            Importá tu primer producto pegando una URL de MercadoLibre arriba ↑
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════ TIENDA ══════════════════ -->
+<div id="panel-tienda">
+  <div class="store-header">
+    <div class="store-logo">SRV <span>INTEGRAL</span></div>
+    <div class="store-tagline">Herramientas profesionales para el electricista argentino</div>
+  </div>
+
+  <div class="store-filters" id="store-filters">
+    <div class="filter-pill active" onclick="filtrarCategoria('',this)">Todos</div>
+  </div>
+
+  <div class="store-grid" id="store-grid">
+    <div class="empty-state">
+      <div class="icon">🔧</div>
+      <div>Todavía no hay productos cargados</div>
+      <div style="margin-top:0.5rem;font-size:0.8rem">Importalos desde el panel Admin</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SINCRONIZACIÓN ══════════════════ -->
+<div id="panel-sync">
+  <div class="section-title">🔄 Opciones de Sincronización</div>
+
+  <div class="sync-card">
+    <h3>📋 Opción 1 — JSONBin.io (ya lo usás)</h3>
+    <p>Exportá tu catálogo como JSON y guardalo en JSONBin. Cualquier otra instancia de la tienda lo puede leer al abrir. Ideal para mantener un solo source of truth.</p>
+    <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:0.8rem">
+      <button class="btn btn-primary btn-sm" onclick="sincronizarJSONBin()">☁️ Guardar en JSONBin</button>
+      <button class="btn btn-secondary btn-sm" onclick="cargarDesdeJSONBin()">⬇️ Cargar desde JSONBin</button>
+    </div>
+    <div id="jsonbin-status" style="margin-top:0.6rem;font-size:0.82rem;color:var(--muted)"></div>
+    <div class="code-block" id="jsonbin-config" style="margin-top:0.8rem">
+# Configurá tus credenciales:
+BIN_ID = "TU_BIN_ID"
+API_KEY = "TU_API_KEY_JSONBIN"
+
+# Luego editá las variables al principio del script JS en esta página
+    </div>
+  </div>
+
+  <div class="sync-card">
+    <h3>🤖 Opción 2 — Script Python de actualización automática</h3>
+    <p>Este script consulta la API de ML para cada producto en tu catálogo, actualiza los precios base y recalcula con tu markup. Correlo manualmente o programalo con cron.</p>
+    <div class="code-block">
+import requests, json
+
+MARKUP = 0.30  # 30%
+CATALOG_FILE = "catalog.json"
+
+def get_ml_price(item_id):
+    url = f"https://api.mercadolibre.com/items/{item_id}"
+    r = requests.get(url)
+    return r.json().get("price", 0)
+
+with open(CATALOG_FILE) as f:
+    catalog = json.load(f)
+
+for p in catalog:
+    new_base = get_ml_price(p["ml_id"])
+    if new_base and new_base != p["price_ml"]:
+        print(f"Actualizando {p['title']}: ${p['price_ml']} → ${new_base}")
+        p["price_ml"] = new_base
+        p["price_srv"] = round(new_base * (1 + MARKUP), 2)
+
+with open(CATALOG_FILE, "w") as f:
+    json.dump(catalog, f, indent=2)
+
+print("✅ Catálogo actualizado")
+    </div>
+  </div>
+
+  <div class="sync-card">
+    <h3>⏱️ Opción 3 — Actualización en tiempo real (en la tienda)</h3>
+    <p>Activá el modo "live check" para que la tienda consulte el precio actual de ML cada vez que se abre un producto. Los precios siempre van a reflejar la realidad del mercado.</p>
+    <div style="display:flex;align-items:center;gap:1rem;margin-top:0.5rem">
+      <label class="toggle-switch">
+        <input type="checkbox" id="live-check-toggle" onchange="toggleLiveCheck(this)">
+        <span class="toggle-slider"></span>
+      </label>
+      <span id="live-check-label" style="font-size:0.88rem;color:var(--muted)">Live check desactivado</span>
+    </div>
+  </div>
+
+  <div class="sync-card">
+    <h3>📊 Opción 4 — Google Sheets como backend</h3>
+    <p>Con Google Apps Script podés crear una hoja que actúe como CMS: modificás precios, títulos y visibilidad desde Sheets y la tienda los lee automáticamente. Ideal si manejás el catálogo con tu equipo.</p>
+    <div class="code-block">
+// En Google Apps Script → Crear un endpoint GET:
+function doGet() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getSheetByName("Catalogo");
+  const rows = sheet.getDataRange().getValues();
+  const [headers, ...data] = rows;
+  const json = data.map(row =>
+    Object.fromEntries(headers.map((h, i) => [h, row[i]]))
+  );
+  return ContentService
+    .createTextOutput(JSON.stringify(json))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+    </div>
+  </div>
+
+  <div class="sync-card">
+    <h3>🌐 Opción 5 — Publicar en Netlify Drop</h3>
+    <p>Exportá la tienda como HTML y arrastrala a netlify.com/drop para obtener una URL pública al instante. Para actualizar, simplemente volvé a subir el archivo.</p>
+    <div style="display:flex;gap:0.8rem;margin-top:0.6rem;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="exportarTiendaHTML()">📄 Exportar tienda completa</button>
+    </div>
+  </div>
+
+</div>
+
+</main>
+
+<!-- ══════════════════ MODAL EDITAR ══════════════════ -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="edit-modal-title">Editar Producto</div>
+      <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
+    </div>
+    <div class="edit-field">
+      <label>Título</label>
+      <input type="text" id="edit-title" />
+    </div>
+    <div class="edit-field">
+      <label>Descripción</label>
+      <textarea id="edit-desc"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div>
+        <label>Precio ML (base)</label>
+        <input type="number" id="edit-price-ml" onchange="recalcEditPrice()" />
+      </div>
+      <div>
+        <label>Markup %</label>
+        <input type="number" id="edit-markup" onchange="recalcEditPrice()" min="-100" max="500" />
+      </div>
+      <div>
+        <label>Precio SRV (final)</label>
+        <input type="number" id="edit-price-srv" style="color:var(--gold);font-weight:700" />
+      </div>
+    </div>
+    <div class="edit-field">
+      <label>Fotos (click para seleccionar como principal)</label>
+      <div class="photo-grid" id="edit-photos"></div>
+    </div>
+    <div style="display:flex;gap:0.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="save-edit-btn" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL DETALLE (TIENDA) ══════════════════ -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-title"></div>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="detail-images">
+      <div class="detail-main-img"><img id="detail-main-img" src="" /></div>
+      <div class="detail-thumbs" id="detail-thumbs"></div>
+    </div>
+    <div class="detail-price-wrap">
+      <span class="detail-price" id="detail-price"></span>
+      <span class="detail-original" id="detail-original"></span>
+      <div style="margin-top:0.3rem;font-size:0.78rem;color:var(--muted)">Precio final — consultá por transferencia o efectivo</div>
+    </div>
+    <div class="detail-desc" id="detail-desc"></div>
+    <div style="display:flex;gap:0.8rem;margin-top:1.2rem">
+      <a id="detail-wa" href="#" target="_blank" style="text-decoration:none;flex:1">
+        <button class="btn btn-primary" style="width:100%">💬 Consultar por WhatsApp</button>
+      </a>
+      <button class="btn btn-secondary" onclick="closeModal('detail-modal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+<script>
+// ── CONFIGURACIÓN ──────────────────────────────────────────
+const PROXY = 'https://srvintegralapp.netlify.app/.netlify/functions/ml-proxy?url=';
+
+const CONFIG = {
+  jsonbinId: '69f0afd2aaba882197494b20',
+  jsonbinKey: '$2a$10$wj625wbIzbwgbLLeDvfQAOGwipbo5anqaT1AhrKSpbmcHyKL6hvqm',
+  whatsapp: '5491123882071',
+  storeName: 'SRV Integral',
+  liveCheck: false
+};
+
+// ── ESTADO ─────────────────────────────────────────────────
+let catalog = JSON.parse(localStorage.getItem('srv_catalog') || '[]');
+let editingId = null;
+
+// ── TABS ───────────────────────────────────────────────────
+function showTab(id, tabEl) {
+  document.querySelectorAll('[id^="panel-"]').forEach(p => p.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  else {
+    const idx = ['panel-admin','panel-tienda','panel-sync'].indexOf(id);
+    document.querySelectorAll('.tab')[idx]?.classList.add('active');
+  }
+  if (id === 'panel-tienda') renderTienda();
+  if (id === 'panel-sync') updateSyncConfig();
+}
+
+// ── EXTRAER ID DE ML ────────────────────────────────────────
+function extractMLId(url) {
+  // item_id en query string: ?pdp_filters=item_id:MLA1148530911
+  const qItem = url.match(/item_id:(MLA\d+)/i);
+  if (qItem) return qItem[1].toUpperCase();
+  // /p/MLA123456789
+  const pFormat = url.match(/\/p\/(MLA\d+)/i);
+  if (pFormat) return pFormat[1].toUpperCase();
+  // MLA-123456789
+  const guion = url.match(/MLA-(\d+)/i);
+  if (guion) return 'MLA' + guion[1];
+  // MLAU123456789 o MLA123456789
+  const any = url.match(/MLAU?(\d+)/i);
+  if (any) return 'MLA' + any[1];
+  return null;
+}
+
+// ── IMPORTAR PRODUCTO ───────────────────────────────────────
+async function importarProducto() {
+  const url = document.getElementById('ml-url').value.trim();
+  const markup = parseFloat(document.getElementById('import-markup').value) || 30;
+  const cat = document.getElementById('import-cat').value.trim() || 'General';
+
+  if (!url) { toast('Pegá una URL de MercadoLibre', 'error'); return; }
+
+  const mlId = extractMLId(url);
+  if (!mlId) { toast('No se pudo extraer el ID del producto. Asegurate de pegar la URL completa.', 'error'); return; }
+
+  if (catalog.find(p => p.ml_id === mlId)) {
+    toast(`${mlId} ya está en el catálogo`, 'error'); return;
+  }
+
+  const btn = document.getElementById('import-btn');
+  const status = document.getElementById('import-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Importando...';
+  status.textContent = 'Consultando API de MercadoLibre...';
+
+  try {
+    // Fetch item data
+    const [itemRes, descRes] = await Promise.all([
+      fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId)}`),
+      fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId + '/description')}`).catch(() => ({ json: () => ({}) }))
+    ]);
+
+    if (!itemRes.ok) throw new Error(`API error: ${itemRes.status}`);
+
+    const item = await itemRes.json();
+    const descData = await descRes.json();
+
+    const priceMl = item.price || 0;
+    const priceSrv = parseFloat((priceMl * (1 + markup / 100)).toFixed(2));
+
+    // Estandarizar fotos: 500x500 WebP (via ML image service)
+    const photos = (item.pictures || []).map(pic => {
+      const base = pic.secure_url || pic.url || '';
+      return base.replace(/-[A-Z]+\.(jpg|jpeg|png|webp)/i, '-O.$1'); // Original size
+    }).filter(Boolean).slice(0, 8);
+
+    const product = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      ml_id: mlId,
+      ml_url: url,
+      title: item.title || 'Sin título',
+      description: descData.plain_text || item.title || '',
+      price_ml: priceMl,
+      price_srv: priceSrv,
+      markup: markup,
+      category: cat,
+      photos: photos,
+      main_photo: photos[0] || '',
+      condition: item.condition || 'new',
+      visible: true,
+      imported_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    catalog.push(product);
+    saveCatalog();
+    renderCatalog();
+
+    document.getElementById('ml-url').value = '';
+    status.textContent = `✅ ${item.title?.slice(0, 60)} — $${priceSrv.toLocaleString('es-AR')}`;
+    toast('Producto importado correctamente', 'success');
+
+  } catch (e) {
+    console.error(e);
+    status.textContent = '❌ Error: ' + e.message;
+    toast('Error al importar. Verificá la URL.', 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '⚡ IMPORTAR';
+}
+
+// ── RENDERIZAR CATÁLOGO (ADMIN) ─────────────────────────────
+function renderCatalog() {
+  const tbody = document.getElementById('catalog-body');
+  const count = catalog.length;
+  document.getElementById('cat-count').textContent = count;
+  document.getElementById('product-count').textContent = count + ' productos';
+
+  if (!count) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">
+      Importá tu primer producto pegando una URL de MercadoLibre arriba ↑</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = catalog.map((p, i) => `
+    <tr>
+      <td>
+        ${p.main_photo
+          ? `<img src="${p.main_photo}" class="prod-thumb" loading="lazy" onerror="this.style.display='none'">`
+          : `<div class="prod-thumb-placeholder">🔧</div>`}
+      </td>
+      <td>
+        <div class="prod-title">${p.title}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${p.ml_id}</div>
+      </td>
+      <td>
+        <div class="price-ml">$${p.price_ml.toLocaleString('es-AR')}</div>
+      </td>
+      <td>
+        <input type="number" value="${p.markup}" min="0" max="500"
+          style="width:70px;padding:0.3rem 0.5rem;font-size:0.88rem" min="-100" max="500"
+          onchange="cambiarMarkup('${p.id}', this.value)" />
+        <span style="font-size:0.8rem;color:var(--muted)">%</span>
+      </td>
+      <td><div class="price-srv">$${p.price_srv.toLocaleString('es-AR')}</div></td>
+      <td><span style="font-size:0.82rem;color:var(--muted)">${p.category}</span></td>
+      <td>
+        <label class="toggle-switch">
+          <input type="checkbox" ${p.visible ? 'checked' : ''} onchange="toggleVisible('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-secondary btn-sm" onclick="editarProducto('${p.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarProducto('${p.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── MARKUP & PRECIOS ─────────────────────────────────────────
+function cambiarMarkup(id, val) {
+  const p = catalog.find(x => x.id === id);
+  if (!p) return;
+  p.markup = parseFloat(val) || 0;
+  p.price_srv = parseFloat((p.price_ml * (1 + p.markup / 100)).toFixed(2));
+  p.updated_at = new Date().toISOString();
+  saveCatalog();
+  renderCatalog();
+}
+
+function recalcularPrecios() {
+  const gm = parseFloat(document.getElementById('global-markup').value) || 0;
+  catalog.forEach(p => {
+    p.markup = gm;
+    p.price_srv = parseFloat((p.price_ml * (1 + gm / 100)).toFixed(2));
+    p.updated_at = new Date().toISOString();
+  });
+  saveCatalog();
+  renderCatalog();
+  toast(`Markup global ${gm}% aplicado a ${catalog.length} productos`, 'success');
+}
+
+function toggleVisible(id, val) {
+  const p = catalog.find(x => x.id === id);
+  if (p) { p.visible = val; saveCatalog(); }
+}
+
+// ── EDITAR ───────────────────────────────────────────────────
+function editarProducto(id) {
+  const p = catalog.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('edit-modal-title').textContent = p.title.slice(0, 60);
+  document.getElementById('edit-title').value = p.title;
+  document.getElementById('edit-desc').value = p.description;
+  document.getElementById('edit-price-ml').value = p.price_ml;
+  document.getElementById('edit-markup').value = p.markup;
+  document.getElementById('edit-price-srv').value = p.price_srv;
+
+  const grid = document.getElementById('edit-photos');
+  grid.innerHTML = p.photos.map((ph, i) => `
+    <img src="${ph}" class="${ph === p.main_photo ? 'selected' : ''}"
+      onclick="selectMainPhoto('${ph}')" loading="lazy"
+      onerror="this.style.opacity='0.3'" />
+  `).join('');
+
+  openModal('edit-modal');
+}
+
+function selectMainPhoto(url) {
+  document.querySelectorAll('#edit-photos img').forEach(img => {
+    img.classList.toggle('selected', img.src.includes(url) || img.getAttribute('src') === url);
+  });
+}
+
+function recalcEditPrice() {
+  const ml = parseFloat(document.getElementById('edit-price-ml').value) || 0;
+  const mk = parseFloat(document.getElementById('edit-markup').value) || 0;
+  document.getElementById('edit-price-srv').value = parseFloat((ml * (1 + mk / 100)).toFixed(2));
+}
+
+function guardarEdicion() {
+  const p = catalog.find(x => x.id === editingId);
+  if (!p) return;
+  p.title = document.getElementById('edit-title').value;
+  p.description = document.getElementById('edit-desc').value;
+  p.price_ml = parseFloat(document.getElementById('edit-price-ml').value) || p.price_ml;
+  p.markup = parseFloat(document.getElementById('edit-markup').value) || p.markup;
+  p.price_srv = parseFloat(document.getElementById('edit-price-srv').value) || p.price_srv;
+
+  const sel = document.querySelector('#edit-photos img.selected');
+  if (sel) p.main_photo = sel.src;
+
+  p.updated_at = new Date().toISOString();
+  saveCatalog();
+  renderCatalog();
+  closeModal('edit-modal');
+  toast('Producto actualizado', 'success');
+}
+
+function eliminarProducto(id) {
+  if (!confirm('¿Eliminar este producto del catálogo?')) return;
+  catalog = catalog.filter(x => x.id !== id);
+  saveCatalog();
+  renderCatalog();
+  toast('Producto eliminado', 'success');
+}
+
+// ── TIENDA ───────────────────────────────────────────────────
+let activeCategory = '';
+
+function renderTienda() {
+  const visible = catalog.filter(p => p.visible);
+  const grid = document.getElementById('store-grid');
+  const filtersEl = document.getElementById('store-filters');
+
+  // Categorías únicas
+  const cats = [...new Set(catalog.map(p => p.category).filter(Boolean))];
+  filtersEl.innerHTML = `<div class="filter-pill ${activeCategory === '' ? 'active' : ''}" onclick="filtrarCategoria('',this)">Todos</div>` +
+    cats.map(c => `<div class="filter-pill ${activeCategory === c ? 'active' : ''}" onclick="filtrarCategoria('${c}',this)">${c}</div>`).join('');
+
+  const filtered = activeCategory ? visible.filter(p => p.category === activeCategory) : visible;
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="icon">🔧</div><div>No hay productos en esta categoría</div></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card" onclick="verDetalle('${p.id}')">
+      <div class="card-img-wrap">
+        ${p.main_photo
+          ? `<img src="${p.main_photo}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>'">`
+          : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:3rem">🔧</div>`}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${p.title}</div>
+        <div>
+          <span class="card-price">$${p.price_srv.toLocaleString('es-AR')}</span>
+        </div>
+      </div>
+      <button class="card-add" onclick="event.stopPropagation();consultarWA('${p.id}')">+</button>
+    </div>
+  `).join('');
+}
+
+function filtrarCategoria(cat, el) {
+  activeCategory = cat;
+  document.querySelectorAll('#store-filters .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTienda();
+}
+
+async function verDetalle(id) {
+  const p = catalog.find(x => x.id === id);
+  if (!p) return;
+
+  let currentPrice = p.price_ml;
+
+  // Live check
+  if (CONFIG.liveCheck) {
+    try {
+      const r = await fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + p.ml_id)}`);
+      const d = await r.json();
+      if (d.price) {
+        currentPrice = d.price;
+        const newSrv = parseFloat((d.price * (1 + p.markup / 100)).toFixed(2));
+        p.price_ml = d.price;
+        p.price_srv = newSrv;
+        saveCatalog();
+      }
+    } catch(e) {}
+  }
+
+  document.getElementById('detail-title').textContent = p.title;
+  document.getElementById('detail-price').textContent = '$' + p.price_srv.toLocaleString('es-AR');
+  document.getElementById('detail-original').textContent = p.markup > 0 ? `ML: $${p.price_ml.toLocaleString('es-AR')}` : '';
+  document.getElementById('detail-desc').textContent = p.description || 'Sin descripción disponible.';
+
+  const mainImg = document.getElementById('detail-main-img');
+  mainImg.src = p.main_photo || '';
+
+  const thumbs = document.getElementById('detail-thumbs');
+  thumbs.innerHTML = p.photos.map((ph, i) => `
+    <img src="${ph}" class="detail-thumb ${ph === p.main_photo ? 'active' : ''}"
+      onclick="cambiarFoto('${ph}',this)" loading="lazy" />
+  `).join('');
+
+  document.getElementById('detail-wa').href =
+    `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(`Hola, me interesa: ${p.title} — $${p.price_srv.toLocaleString('es-AR')}. ¿Está disponible?`)}`;
+
+  openModal('detail-modal');
+}
+
+function cambiarFoto(url, el) {
+  document.getElementById('detail-main-img').src = url;
+  document.querySelectorAll('.detail-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function consultarWA(id) {
+  const p = catalog.find(x => x.id === id);
+  if (!p) return;
+  window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(`Hola, consulto por: ${p.title} — $${p.price_srv.toLocaleString('es-AR')}`)}`, '_blank');
+}
+
+// ── GUARDAR / CARGAR ─────────────────────────────────────────
+function saveCatalog() {
+  localStorage.setItem('srv_catalog', JSON.stringify(catalog));
+}
+
+function exportarJSON() {
+  const blob = new Blob([JSON.stringify(catalog, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'catalogo-srv.json';
+  a.click();
+  toast('JSON exportado', 'success');
+}
+
+function importarJSON() {
+  document.getElementById('json-input').click();
+}
+
+function cargarArchivoJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data)) throw new Error('Formato inválido');
+      catalog = data;
+      saveCatalog();
+      renderCatalog();
+      toast(`${data.length} productos cargados`, 'success');
+    } catch(err) {
+      toast('Error al leer el JSON', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── JSONBIN ──────────────────────────────────────────────────
+async function sincronizarJSONBin() {
+  if (!CONFIG.jsonbinId || !CONFIG.jsonbinKey) {
+    toast('Configurá BIN_ID y API_KEY en el código (sección CONFIG)', 'error');
+    document.getElementById('jsonbin-status').textContent = '⚠️ Falta configurar credenciales en CONFIG';
+    return;
+  }
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.jsonbinId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.jsonbinKey },
+      body: JSON.stringify(catalog)
+    });
+    if (!r.ok) throw new Error(r.status);
+    document.getElementById('jsonbin-status').textContent = '✅ Guardado en JSONBin — ' + new Date().toLocaleTimeString();
+    toast('Catálogo sincronizado en la nube', 'success');
+  } catch(e) {
+    document.getElementById('jsonbin-status').textContent = '❌ Error: ' + e.message;
+    toast('Error al sincronizar', 'error');
+  }
+}
+
+async function cargarDesdeJSONBin() {
+  if (!CONFIG.jsonbinId || !CONFIG.jsonbinKey) {
+    toast('Configurá BIN_ID y API_KEY primero', 'error'); return;
+  }
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.jsonbinId}/latest`, {
+      headers: { 'X-Master-Key': CONFIG.jsonbinKey }
+    });
+    const d = await r.json();
+    catalog = d.record;
+    saveCatalog();
+    renderCatalog();
+    toast(`${catalog.length} productos cargados desde la nube`, 'success');
+  } catch(e) {
+    toast('Error al cargar desde JSONBin', 'error');
+  }
+}
+
+function toggleLiveCheck(el) {
+  CONFIG.liveCheck = el.checked;
+  document.getElementById('live-check-label').textContent =
+    el.checked ? '🟢 Live check activado — precios actualizados al abrir cada producto' : 'Live check desactivado';
+}
+
+function updateSyncConfig() {
+  document.getElementById('jsonbin-config').innerHTML =
+    `# Estado actual:\nBIN_ID = "${CONFIG.jsonbinId || 'NO CONFIGURADO'}"\nAPI_KEY = "${CONFIG.jsonbinKey ? '***configurada***' : 'NO CONFIGURADA'}"
+\n# Para configurar, editá la sección CONFIG en el código fuente (línea ~195)`;
+}
+
+function exportarTiendaHTML() {
+  toast('Esta función exporta la tienda completa con el catálogo actual embebido. Próximamente.');
+}
+
+// ── MODALES ───────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type === 'success' ? ' success' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.className = '', 3500);
+}
+
+
+// ── IMPORTACIÓN MASIVA ──────────────────────────────────────
+async function importarMasivo() {
+  const SELLER_ID = '144622772';
+  const markup = parseFloat(document.getElementById('bulk-markup').value) || 30;
+  const limite = parseInt(document.getElementById('bulk-limit').value) || 50;
+  const btn = document.getElementById('bulk-btn');
+  const progressEl = document.getElementById('bulk-progress');
+  const barEl = document.getElementById('bulk-bar');
+  const statusEl = document.getElementById('bulk-status');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Importando...';
+  progressEl.style.display = 'block';
+
+  let offset = 0;
+  const batchSize = 50;
+  let allIds = [];
+
+  // 1. Traer todos los IDs en batches de 50
+  statusEl.textContent = 'Obteniendo lista de productos...';
+  while (allIds.length < limite) {
+    const toFetch = Math.min(batchSize, limite - allIds.length);
+    try {
+      const r = await fetch(`https://srvintegralapp.netlify.app/.netlify/functions/ml-proxy?url=${encodeURIComponent('https://api.mercadolibre.com/sites/MLA/search?seller_id=' + SELLER_ID + '&limit=' + toFetch + '&offset=' + offset)}`);
+      const d = await r.json();
+      const results = d.results || [];
+      if (!results.length) break;
+      allIds.push(...results.map(x => ({ id: x.id, cat: x.category_id, title: x.title, price: x.price, thumb: x.thumbnail })));
+      offset += results.length;
+      if (results.length < toFetch) break;
+    } catch(e) {
+      statusEl.textContent = '❌ Error al obtener productos: ' + e.message;
+      btn.disabled = false;
+      btn.innerHTML = '🚀 IMPORTAR TODO';
+      return;
+    }
+  }
+
+  if (!allIds.length) {
+    statusEl.textContent = '❌ No se encontraron productos. ML puede estar bloqueando el acceso.';
+    btn.disabled = false;
+    btn.innerHTML = '🚀 IMPORTAR TODO';
+    return;
+  }
+
+  statusEl.textContent = `Encontrados ${allIds.length} productos. Importando detalles...`;
+
+  // 2. Por cada producto, traer detalles completos en batches de 20
+  let imported = 0;
+  let skipped = 0;
+  const detailBatch = 20;
+
+  for (let i = 0; i < allIds.length; i += detailBatch) {
+    const batch = allIds.slice(i, i + detailBatch);
+    const ids = batch.map(x => x.id).join(',');
+
+    try {
+      const r = await fetch(`https://srvintegralapp.netlify.app/.netlify/functions/ml-proxy?url=${encodeURIComponent('https://api.mercadolibre.com/items?ids=' + ids)}`);
+      const items = await r.json();
+
+      for (const entry of items) {
+        if (entry.code !== 200) { skipped++; continue; }
+        const item = entry.body;
+        if (catalog.find(p => p.ml_id === item.id)) { skipped++; continue; }
+
+        const priceMl = item.price || 0;
+        const priceSrv = parseFloat((priceMl * (1 + markup / 100)).toFixed(2));
+        const photos = (item.pictures || [])
+          .map(p => p.secure_url || p.url || '')
+          .filter(Boolean).slice(0, 8);
+
+        // Categoría legible desde atributos o category_id
+        const catAttr = (item.attributes || []).find(a => a.id === 'ITEM_CONDITION');
+        const catName = item.category_id || 'General';
+
+        catalog.push({
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+          ml_id: item.id,
+          ml_url: item.permalink || '',
+          title: item.title || 'Sin título',
+          description: item.plain_text || '',
+          price_ml: priceMl,
+          price_srv: priceSrv,
+          markup: markup,
+          category: catName,
+          photos: photos,
+          main_photo: photos[0] || '',
+          condition: item.condition || 'new',
+          available_qty: item.available_quantity || 0,
+          visible: true,
+          imported_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        imported++;
+      }
+    } catch(e) {
+      // Continuar con el siguiente batch si falla uno
+    }
+
+    const pct = Math.round(((i + detailBatch) / allIds.length) * 100);
+    barEl.style.width = Math.min(pct, 100) + '%';
+    statusEl.textContent = `Importando... ${imported} productos procesados (${skipped} omitidos)`;
+    saveCatalog();
+    renderCatalog();
+
+    // Pequeña pausa para no saturar la API
+    await new Promise(res => setTimeout(res, 300));
+  }
+
+  barEl.style.width = '100%';
+  statusEl.textContent = `✅ Listo — ${imported} productos importados, ${skipped} omitidos (ya existían o sin acceso)`;
+  btn.disabled = false;
+  btn.innerHTML = '🚀 IMPORTAR TODO';
+  toast(`${imported} productos importados correctamente`, 'success');
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+renderCatalog();
+</script>
+</body>
+</html>
