@@ -988,7 +988,7 @@ function doGet() {
 <!-- ══════════════════ JAVASCRIPT ══════════════════ -->
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────
-const PROXY = 'https://srvintegralapp.netlify.app/.netlify/functions/ml-proxy?url=';
+const PROXY = 'https://srvtienda.netlify.app/.netlify/functions/ml-proxy?url=';
 
 const CONFIG = {
   jsonbinId: '69f0afd2aaba882197494b20',
@@ -1056,15 +1056,17 @@ async function importarProducto() {
 
   try {
     // Fetch item data
-    const [itemRes, descRes] = await Promise.all([
+    const [itemRaw, descRaw] = await Promise.all([
       fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId)}`),
-      fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId + '/description')}`).catch(() => ({ json: () => ({}) }))
+      fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId + '/description')}`).catch(() => null)
     ]);
 
-    if (!itemRes.ok) throw new Error(`API error: ${itemRes.status}`);
+    if (!itemRaw.ok) throw new Error(`API error: ${itemRaw.status}`);
 
-    const item = await itemRes.json();
-    const descData = await descRes.json();
+    const itemWrapper = await itemRaw.json();
+    const item = JSON.parse(itemWrapper.contents);
+    const descWrapper = descRaw ? await descRaw.json() : null;
+    const descData = descWrapper ? JSON.parse(descWrapper.contents) : {};
 
     const priceMl = item.price || 0;
     const priceSrv = parseFloat((priceMl * (1 + markup / 100)).toFixed(2));
@@ -1306,7 +1308,8 @@ async function verDetalle(id) {
   if (CONFIG.liveCheck) {
     try {
       const r = await fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + p.ml_id)}`);
-      const d = await r.json();
+      const rw = await r.json();
+      const d = JSON.parse(rw.contents);
       if (d.price) {
         currentPrice = d.price;
         const newSrv = parseFloat((d.price * (1 + p.markup / 100)).toFixed(2));
@@ -1483,8 +1486,9 @@ async function importarMasivo() {
   while (allIds.length < limite) {
     const toFetch = Math.min(batchSize, limite - allIds.length);
     try {
-      const r = await fetch(`https://srvintegralapp.netlify.app/.netlify/functions/ml-proxy?url=${encodeURIComponent('https://api.mercadolibre.com/sites/MLA/search?seller_id=' + SELLER_ID + '&limit=' + toFetch + '&offset=' + offset)}`);
-      const d = await r.json();
+      const r = await fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/sites/MLA/search?seller_id=' + SELLER_ID + '&limit=' + toFetch + '&offset=' + offset)}`);
+      const rw = await r.json();
+      const d = JSON.parse(rw.contents);
       const results = d.results || [];
       if (!results.length) break;
       allIds.push(...results.map(x => ({ id: x.id, cat: x.category_id, title: x.title, price: x.price, thumb: x.thumbnail })));
@@ -1517,8 +1521,9 @@ async function importarMasivo() {
     const ids = batch.map(x => x.id).join(',');
 
     try {
-      const r = await fetch(`https://srvintegralapp.netlify.app/.netlify/functions/ml-proxy?url=${encodeURIComponent('https://api.mercadolibre.com/items?ids=' + ids)}`);
-      const items = await r.json();
+      const r = await fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items?ids=' + ids)}`);
+      const rw2 = await r.json();
+      const items = JSON.parse(rw2.contents);
 
       for (const entry of items) {
         if (entry.code !== 200) { skipped++; continue; }
