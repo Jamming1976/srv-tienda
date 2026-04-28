@@ -719,11 +719,16 @@
 
   <!-- ── IMPORTACIÓN MASIVA ── -->
   <div class="import-box" style="border-color:#c9a84c33">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.8rem;">
-      🚀 Importación Masiva — Pegá URLs de ML
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.8rem">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:1px;text-transform:uppercase;">
+        🚀 Importación Masiva — Pegá URLs de ML
+      </div>
+      <div id="ml-auth-status">
+        <button class="btn btn-secondary btn-sm" onclick="checkMLAuth()" id="ml-auth-btn">🔑 Conectar cuenta ML</button>
+      </div>
     </div>
     <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">
-      Pegá una URL por línea. Podés pegar todas las que quieras — las importa en secuencia automáticamente.
+      Pegá una URL por línea. Con la cuenta ML conectada podés importar todos tus productos sin límites.
     </div>
     <textarea id="bulk-urls" style="min-height:120px;resize:vertical;font-size:0.8rem;font-family:monospace" 
       placeholder="https://www.mercadolibre.com.ar/producto-1/p/MLA123...
@@ -984,6 +989,24 @@ function doGet() {
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────
 const PROXY = 'https://srvtienda.netlify.app/.netlify/functions/ml-proxy?url=';
+const ML_AUTH_URL = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=2596819080389090&redirect_uri=https://srvtienda.netlify.app/.netlify/functions/ml-proxy%3Faction%3Dcallback`;
+
+function getMLToken() { return localStorage.getItem('ml_token'); }
+function isTokenValid() {
+  const exp = localStorage.getItem('ml_token_exp');
+  return exp && Date.now() < parseInt(exp);
+}
+function proxyUrl(mlUrl) {
+  const token = isTokenValid() ? getMLToken() : null;
+  const base = `${PROXY}${encodeURIComponent(mlUrl)}`;
+  return token ? base + `&token=${token}` : base;
+}
+
+// Capturar token_ok al volver del OAuth
+if (window.location.search.includes('token_ok=1')) {
+  history.replaceState({}, '', window.location.pathname);
+  setTimeout(() => toast('✅ Cuenta ML conectada — podés importar tus productos', 'success'), 500);
+}
 
 const CONFIG = {
   jsonbinId: '69f0afd2aaba882197494b20',
@@ -1052,8 +1075,8 @@ async function importarProducto() {
   try {
     // Fetch item data
     const [itemRaw, descRaw] = await Promise.all([
-      fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId)}`),
-      fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId + '/description')}`).catch(() => null)
+      fetch(proxyUrl('https://api.mercadolibre.com/items/' + mlId)),
+      fetch(proxyUrl('https://api.mercadolibre.com/items/' + mlId + '/description')).catch(() => null)
     ]);
 
     if (!itemRaw.ok) throw new Error(`API error: ${itemRaw.status}`);
@@ -1495,8 +1518,8 @@ async function importarMasivo() {
 
     try {
       const [itemRes, descRes] = await Promise.all([
-        fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId)}`),
-        fetch(`${PROXY}${encodeURIComponent('https://api.mercadolibre.com/items/' + mlId + '/description')}`).catch(() => null)
+        fetch(proxyUrl('https://api.mercadolibre.com/items/' + mlId)),
+        fetch(proxyUrl('https://api.mercadolibre.com/items/' + mlId + '/description')).catch(() => null)
       ]);
 
       if (!itemRes.ok) { errors++; continue; }
@@ -1545,6 +1568,25 @@ async function importarMasivo() {
   if (imported > 0) toast(`${imported} productos importados`, 'success');
   else toast('No se pudo importar ningún producto — ML requiere autenticación para estos items', 'error');
 }
+
+// ── ML OAUTH ─────────────────────────────────────────────────
+function checkMLAuth() {
+  if (isTokenValid()) {
+    document.getElementById('ml-auth-btn').innerHTML = '✅ ML Conectado';
+    document.getElementById('ml-auth-btn').style.color = 'var(--success)';
+    toast('Tu cuenta ML ya está conectada', 'success');
+  } else {
+    window.location.href = ML_AUTH_URL;
+  }
+}
+
+// Actualizar estado del botón al cargar
+window.addEventListener('load', () => {
+  if (isTokenValid()) {
+    const btn = document.getElementById('ml-auth-btn');
+    if (btn) { btn.innerHTML = '✅ ML Conectado'; btn.style.borderColor = 'var(--success)'; btn.style.color = 'var(--success)'; }
+  }
+});
 
 // ── INIT ───────────────────────────────────────────────────────
 renderCatalog();
