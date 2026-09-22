@@ -22,7 +22,7 @@ export default async (request) => {
     });
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok) return new Response(JSON.stringify(tokenData), { status: tokenRes.status, headers: corsHeaders });
-    const redirectUrl = `https://srvtienda.netlify.app/?token_ok=1&ml_token=${encodeURIComponent(tokenData.access_token)}&ml_refresh=${encodeURIComponent(tokenData.refresh_token||'')}&ml_exp=${Date.now()+(tokenData.expires_in||21600)*1000}`;
+    const redirectUrl = `https://srvintegral.com/?token_ok=1&ml_token=${encodeURIComponent(tokenData.access_token)}&ml_refresh=${encodeURIComponent(tokenData.refresh_token||'')}&ml_exp=${Date.now()+(tokenData.expires_in||21600)*1000}`;
     return Response.redirect(redirectUrl, 302);
   }
 
