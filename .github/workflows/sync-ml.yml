@@ -1,0 +1,28 @@
+name: Sincronizar precios y stock con ML
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # Cada 6 horas (00:00, 06:00, 12:00, 18:00 UTC)
+  workflow_dispatch:          # También se puede correr manualmente desde GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Correr sincronización
+        env:
+          ML_TOKEN:    ${{ secrets.ML_TOKEN }}
+          JSONBIN_ID:  ${{ secrets.JSONBIN_ID }}
+          JSONBIN_KEY: ${{ secrets.JSONBIN_KEY }}
+        run: python sync.py
