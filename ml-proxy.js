@@ -72,9 +72,13 @@ export default async (request) => {
   }
 
   try {
+    // Aceptar token tanto por header como por query param ?token=
+    // (query param evita preflight CORS en Firefox con wildcard origin)
     const authHeader = request.headers.get('Authorization');
+    const tokenParam = url.searchParams.get('token');
     const fetchHeaders = { 'User-Agent': 'SRV-Tienda/1.0' };
     if (authHeader) fetchHeaders['Authorization'] = authHeader;
+    else if (tokenParam) fetchHeaders['Authorization'] = 'Bearer ' + tokenParam;
 
     const mlRes = await fetch(mlUrl, { headers: fetchHeaders });
     const data = await mlRes.text();
