@@ -1,6 +1,6 @@
 const CLIENT_ID = '2028127575858925';
 const CLIENT_SECRET = 'VX5MqYqqweyMokqMxBPkV58yXnyUbyiz';
-const REDIRECT_URI = 'https://srvtienda.netlify.app/.netlify/functions/ml-proxy?action=callback';
+const REDIRECT_URI = 'https://srvintegral.com/.netlify/functions/ml-proxy?action=callback';
 
 export default async (request) => {
   const url = new URL(request.url);
@@ -50,7 +50,7 @@ export default async (request) => {
       const refreshToken = tokenData.refresh_token || '';
       const expiresIn = tokenData.expires_in || 21600;
 
-      const redirectUrl = `https://srvtienda.netlify.app/?token_ok=1&ml_token=${encodeURIComponent(accessToken)}&ml_refresh=${encodeURIComponent(refreshToken)}&ml_exp=${Date.now() + expiresIn * 1000}`;
+      const redirectUrl = `https://srvintegral.com/?token_ok=1&ml_token=${encodeURIComponent(accessToken)}&ml_refresh=${encodeURIComponent(refreshToken)}&ml_exp=${Date.now() + expiresIn * 1000}`;
       return Response.redirect(redirectUrl, 302);
 
     } catch (err) {
