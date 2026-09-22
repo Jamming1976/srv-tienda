@@ -775,10 +775,18 @@ https://articulo.mercadolibre.com.ar/MLA-789..."></textarea>
 
   <div class="section-title">📦 Catálogo (<span id="cat-count">0</span> productos)</div>
 
+  <div id="bulk-actions-bar" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0.7rem 1rem;margin-bottom:0.8rem;display:none;align-items:center;gap:0.8rem;flex-wrap:wrap">
+    <span id="selected-count" style="font-size:0.85rem;color:var(--muted)">0 seleccionados</span>
+    <button class="btn btn-secondary btn-sm" onclick="accionMasiva('show')">👁 Mostrar</button>
+    <button class="btn btn-secondary btn-sm" onclick="accionMasiva('hide')">🙈 Ocultar</button>
+    <button class="btn btn-danger btn-sm" onclick="accionMasiva('delete')">🗑 Eliminar</button>
+    <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="deseleccionarTodo()">✕ Cancelar</button>
+  </div>
   <div class="product-table-wrap">
     <table id="catalog-table">
       <thead>
         <tr>
+          <th><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" title="Seleccionar todos"></th>
           <th>Foto</th>
           <th>Título</th>
           <th>Precio ML</th>
@@ -989,7 +997,7 @@ function doGet() {
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────
 const PROXY = 'https://srvtienda.netlify.app/.netlify/functions/ml-proxy?url=';
-const ML_AUTH_URL = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=2028127575858925&redirect_uri=https://srvtienda.netlify.app/.netlify/functions/ml-proxy%3Faction%3Dcallback`;
+const ML_AUTH_URL = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=2028127575858925&redirect_uri=https://srvtienda.netlify.app/.netlify/functions/ml-proxy%3Faction%3Dcallback&scope=read%20offline_access`;
 
 function getMLToken() { return localStorage.getItem('ml_token'); }
 function isTokenValid() {
@@ -1003,10 +1011,21 @@ function proxyUrl(mlUrl) {
 }
 
 // Capturar token_ok al volver del OAuth
-if (window.location.search.includes('token_ok=1')) {
-  history.replaceState({}, '', window.location.pathname);
-  setTimeout(() => toast('✅ Cuenta ML conectada — podés importar tus productos', 'success'), 500);
-}
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('token_ok') === '1') {
+    const token = params.get('ml_token');
+    const refresh = params.get('ml_refresh');
+    const exp = params.get('ml_exp');
+    if (token) {
+      localStorage.setItem('ml_token', token);
+      localStorage.setItem('ml_token_exp', exp || String(Date.now() + 6*3600*1000));
+      if (refresh) localStorage.setItem('ml_refresh_token', refresh);
+    }
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => toast('✅ Cuenta ML conectada — podés importar tus productos', 'success'), 500);
+  }
+})();
 
 const CONFIG = {
   jsonbinId: '69f0afd2aaba882197494b20',
@@ -1146,6 +1165,7 @@ function renderCatalog() {
 
   tbody.innerHTML = catalog.map((p, i) => `
     <tr>
+      <td><input type="checkbox" class="row-check" data-id="${p.id}"></td>
       <td>
         ${p.main_photo
           ? `<img src="${p.main_photo}" class="prod-thumb" loading="lazy" onerror="this.style.display='none'">`
@@ -1568,6 +1588,67 @@ async function importarMasivo() {
   if (imported > 0) toast(`${imported} productos importados`, 'success');
   else toast('No se pudo importar ningún producto — ML requiere autenticación para estos items', 'error');
 }
+
+// ── SELECCIÓN MASIVA ─────────────────────────────────────────
+function toggleSelectAll(el) {
+  document.querySelectorAll('.row-check').forEach(cb => {
+    cb.checked = el.checked;
+  });
+  actualizarBarraMasiva();
+}
+
+function actualizarBarraMasiva() {
+  const checked = document.querySelectorAll('.row-check:checked');
+  const bar = document.getElementById('bulk-actions-bar');
+  const count = document.getElementById('selected-count');
+  if (checked.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = `${checked.length} seleccionado${checked.length > 1 ? 's' : ''}`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function deseleccionarTodo() {
+  document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+  const sa = document.getElementById('select-all');
+  if (sa) sa.checked = false;
+  actualizarBarraMasiva();
+}
+
+function accionMasiva(accion) {
+  const checked = [...document.querySelectorAll('.row-check:checked')];
+  const ids = checked.map(cb => cb.getAttribute('data-id'));
+  if (!ids.length) return;
+
+  if (accion === 'delete') {
+    if (!confirm(`¿Eliminar ${ids.length} producto(s)?`)) return;
+    catalog = catalog.filter(p => !ids.includes(p.id));
+    toast(`${ids.length} productos eliminados`, 'success');
+  } else if (accion === 'show') {
+    catalog.forEach(p => { if (ids.includes(p.id)) p.visible = true; });
+    toast(`${ids.length} productos visibles`, 'success');
+  } else if (accion === 'hide') {
+    catalog.forEach(p => { if (ids.includes(p.id)) p.visible = false; });
+    toast(`${ids.length} productos ocultados`, 'success');
+  }
+
+  saveCatalog();
+  renderCatalog();
+  deseleccionarTodo();
+}
+
+// Escuchar cambios en checkboxes individuales
+document.addEventListener('change', e => {
+  if (e.target.classList.contains('row-check')) {
+    actualizarBarraMasiva();
+    // Sincronizar el select-all
+    const all = document.querySelectorAll('.row-check');
+    const checked = document.querySelectorAll('.row-check:checked');
+    const sa = document.getElementById('select-all');
+    if (sa) sa.checked = all.length === checked.length && all.length > 0;
+  }
+});
 
 // ── ML OAUTH ─────────────────────────────────────────────────
 function checkMLAuth() {
