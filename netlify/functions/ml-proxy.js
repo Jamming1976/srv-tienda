@@ -1,66 +1,98 @@
-const CLIENT_ID = '2596819080389090';
-const CLIENT_SECRET = '2xlErTwqsjvd6aljZ1jn1ap3hlqmC4P2';
-const REDIRECT_URI = 'https://srvtienda.netlify.app/.netlify/functions/ml-proxy';
+const CLIENT_ID = '2028127575858925';
+const CLIENT_SECRET = 'VX5MqYqqweyMokqMxBPkV58yXnyUbyiz';
+const REDIRECT_URI = 'https://srvtienda.netlify.app/.netlify/functions/ml-proxy?action=callback';
 
 export default async (request) => {
   const url = new URL(request.url);
   const action = url.searchParams.get('action');
+
+  // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Content-Type': 'application/json'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
-  // OAuth callback — intercambiar code por token
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  // OAuth callback: exchange code for token
   if (action === 'callback') {
     const code = url.searchParams.get('code');
     if (!code) {
-      return new Response(JSON.stringify({ error: 'No code' }), { status: 400, headers: corsHeaders });
+      return new Response('Missing code', { status: 400, headers: corsHeaders });
     }
+
     try {
-      const r = await fetch('https://api.mercadolibre.com/oauth/token', {
+      const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           grant_type: 'authorization_code',
           client_id: CLIENT_ID,
           client_secret: CLIENT_SECRET,
-          code,
-          redirect_uri: REDIRECT_URI
-        })
+          code: code,
+          redirect_uri: REDIRECT_URI,
+        }),
       });
-      const data = await r.json();
-      // Devolver token embebido en HTML para que la app lo capture
-      const html = `<!DOCTYPE html><html><body>
-        <script>
-          localStorage.setItem('ml_token', '${data.access_token}');
-          localStorage.setItem('ml_token_exp', Date.now() + ${(data.expires_in || 21600) * 1000});
-          window.location.href = 'https://srvtienda.netlify.app/?token_ok=1';
-        </script>
-        <p>Autenticando... <a href="https://srvtienda.netlify.app">volver</a></p>
-      </body></html>`;
-      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html', 'Access-Control-Allow-Origin': '*' } });
-    } catch(e) {
-      return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
+
+      const tokenData = await tokenRes.json();
+
+      if (!tokenRes.ok) {
+        return new Response(JSON.stringify(tokenData), {
+          status: tokenRes.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Redirect to main page with token in fragment (stays client-side)
+      const redirectUrl = `https://srvtienda.netlify.app/?token_ok=1#access_token=${tokenData.access_token}&refresh_token=${tokenData.refresh_token || ''}`;
+      return Response.redirect(redirectUrl, 302);
+
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
   }
 
-  // Proxy normal — pasar requests a ML con token opcional
-  const target = url.searchParams.get('url');
-  const token = url.searchParams.get('token');
-  if (!target) {
-    return new Response(JSON.stringify({ error: 'Falta URL' }), { status: 400, headers: corsHeaders });
+  // Proxy ML API requests
+  const mlUrl = url.searchParams.get('url');
+  if (!mlUrl) {
+    return new Response('Missing url param', { status: 400, headers: corsHeaders });
+  }
+
+  // Only allow mercadolibre API URLs
+  if (!mlUrl.startsWith('https://api.mercadolibre.com/')) {
+    return new Response('Invalid URL', { status: 403, headers: corsHeaders });
   }
 
   try {
-    const headers = { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const authHeader = request.headers.get('Authorization');
+    const fetchHeaders = {
+      'User-Agent': 'SRV-Tienda/1.0',
+    };
+    if (authHeader) {
+      fetchHeaders['Authorization'] = authHeader;
+    }
 
-    const response = await fetch(decodeURIComponent(target), { headers });
-    const text = await response.text();
-    return new Response(text, { status: 200, headers: corsHeaders });
-  } catch(e) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
+    const mlRes = await fetch(mlUrl, { headers: fetchHeaders });
+    const data = await mlRes.text();
+
+    return new Response(data, {
+      status: mlRes.status,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': mlRes.headers.get('Content-Type') || 'application/json',
+      },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 };
 
