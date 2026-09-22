@@ -1,138 +1,131 @@
 """
-SRV Integral — Sincronizador de precios y stock con MercadoLibre
-Corre via GitHub Actions cada 6 horas (configurable)
+sync_ml_firebase.py
+Sincroniza precio y stock de MercadoLibre → Firebase Realtime Database.
+Corre via GitHub Actions (cron cada 6 horas) o manualmente.
+
+Variables de entorno requeridas:
+  ML_TOKEN      — Bearer token de MercadoLibre (OAuth)
+  FIREBASE_URL  — https://srvfullcommerce-default-rtdb.firebaseio.com
+  FIREBASE_AUTH — secret de Firebase
 """
 
-import requests
-import json
-import os
-import sys
-from datetime import datetime
+import os, json, time, urllib.request, urllib.error
 
-# ── CONFIGURACIÓN ──────────────────────────────────────────────
-ML_TOKEN        = os.environ.get('ML_TOKEN', '')          # Token OAuth de ML
-JSONBIN_ID      = os.environ.get('JSONBIN_ID', '69f0afd2aaba882197494b20')
-JSONBIN_KEY     = os.environ.get('JSONBIN_KEY', '$2a$10$wj625wbIzbwgbLLeDvfQAOGwipbo5anqaT1AhrKSpbmcHyKL6hvqm')
-ML_BASE         = 'https://api.mercadolibre.com'
-BATCH_SIZE      = 20   # ML permite hasta 20 items por request
-# ───────────────────────────────────────────────────────────────
+ML_TOKEN     = os.environ["ML_TOKEN"]
+FIREBASE_URL = os.environ.get("FIREBASE_URL", "https://srvfullcommerce-default-rtdb.firebaseio.com")
+FIREBASE_AUTH = os.environ["FIREBASE_AUTH"]
 
-def get_catalog():
-    """Descargar catálogo desde JSONBin"""
-    r = requests.get(
-        f'https://api.jsonbin.io/v3/b/{JSONBIN_ID}/latest',
-        headers={'X-Master-Key': JSONBIN_KEY}
-    )
-    r.raise_for_status()
-    data = r.json()
-    catalog = data.get('record', [])
-    if isinstance(catalog, dict):
-        catalog = catalog.get('catalogo', [])
-    print(f"📦 Catálogo cargado: {len(catalog)} productos")
-    return catalog
+HEADERS_ML = {
+    "Authorization": f"Bearer {ML_TOKEN}",
+    "User-Agent": "SRV-Tienda-Sync/1.0",
+}
+BATCH = 20   # ML permite hasta 20 IDs por llamada multiget
 
-def save_catalog(catalog):
-    """Guardar catálogo actualizado en JSONBin"""
-    r = requests.put(
-        f'https://api.jsonbin.io/v3/b/{JSONBIN_ID}',
-        headers={
-            'Content-Type': 'application/json',
-            'X-Master-Key': JSONBIN_KEY
-        },
-        json=catalog
-    )
-    r.raise_for_status()
-    print(f"✅ Catálogo guardado: {len(catalog)} productos")
+def fb_get(path):
+    url = f"{FIREBASE_URL}/{path}.json?auth={FIREBASE_AUTH}"
+    with urllib.request.urlopen(url, timeout=15) as r:
+        return json.loads(r.read())
 
-def get_ml_items(ids):
-    """Consultar precios y stock de múltiples items en ML"""
-    headers = {'Accept': 'application/json'}
-    if ML_TOKEN:
-        headers['Authorization'] = f'Bearer {ML_TOKEN}'
-    
-    ids_str = ','.join(ids)
-    r = requests.get(
-        f'{ML_BASE}/items?ids={ids_str}',
-        headers=headers
-    )
-    if r.status_code != 200:
-        print(f"⚠️  Error ML: {r.status_code}")
-        return []
-    return r.json()
+def fb_patch(path, data):
+    url = f"{FIREBASE_URL}/{path}.json?auth={FIREBASE_AUTH}"
+    body = json.dumps(data).encode()
+    req = urllib.request.Request(url, data=body, method="PATCH",
+          headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read())
 
-def sync():
-    print(f"\n🔄 Iniciando sincronización — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"🔑 Token ML: {'✅ configurado' if ML_TOKEN else '❌ no configurado'}")
+def ml_multiget(ids):
+    """Devuelve dict {id: {price, available_quantity, status}} para hasta 20 IDs."""
+    ids_str = ",".join(ids)
+    url = f"https://api.mercadolibre.com/items?ids={ids_str}&attributes=id,price,available_quantity,status"
+    req = urllib.request.Request(url, headers=HEADERS_ML)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            rows = json.loads(r.read())
+        result = {}
+        for row in rows:
+            if row.get("code") == 200:
+                b = row["body"]
+                result[b["id"]] = {
+                    "price": b.get("price", 0),
+                    "available_quantity": b.get("available_quantity", 0),
+                    "status": b.get("status", ""),
+                }
+        return result
+    except Exception as e:
+        print(f"  [ML error] {e}")
+        return {}
 
-    catalog = get_catalog()
-    if not catalog:
-        print("❌ Catálogo vacío")
-        sys.exit(1)
+def main():
+    print("=== Sync ML → Firebase ===")
+
+    # 1. Leer catálogo de Firebase
+    tienda = fb_get("tienda_productos") or {}
+    skus = list(tienda.keys())
+    print(f"  Productos en Firebase: {len(skus)}")
 
     updated = 0
-    paused  = 0
+    hidden  = 0
     errors  = 0
 
-    # Procesar en batches de 20
-    ml_ids = [p['ml_id'] for p in catalog if p.get('ml_id')]
-    
-    for i in range(0, len(ml_ids), BATCH_SIZE):
-        batch_ids = ml_ids[i:i+BATCH_SIZE]
-        print(f"  Procesando {i+1}–{min(i+BATCH_SIZE, len(ml_ids))} de {len(ml_ids)}...")
-        
-        items = get_ml_items(batch_ids)
-        
-        for entry in items:
-            if entry.get('code') != 200:
+    # 2. Procesar en batches de 20
+    for i in range(0, len(skus), BATCH):
+        batch_ids = skus[i:i+BATCH]
+        ml_data = ml_multiget(batch_ids)
+        time.sleep(0.3)  # pequeña pausa para no saturar la API
+
+        for sku in batch_ids:
+            item = tienda[sku]
+            ml  = ml_data.get(sku)
+
+            if not ml:
+                print(f"  {sku}: no se obtuvo dato de ML")
                 errors += 1
                 continue
-            
-            item = entry.get('body', {})
-            ml_id = item.get('id')
-            
-            # Buscar en catálogo
-            product = next((p for p in catalog if p.get('ml_id') == ml_id), None)
-            if not product:
-                continue
-            
-            new_price = item.get('price', 0)
-            new_stock = item.get('available_quantity', 0)
-            ml_status = item.get('status', 'active')  # active, paused, closed
-            
-            changed = False
-            
-            # Actualizar precio si cambió
-            if new_price and new_price != product.get('price_ml'):
-                old = product.get('price_ml', 0)
-                markup = product.get('markup', 30)
-                product['price_ml']  = new_price
-                product['price_srv'] = round(new_price * (1 + markup / 100), 2)
-                print(f"  💰 {ml_id}: ${old:,.0f} → ${new_price:,.0f}")
-                changed = True
-            
-            # Actualizar stock
-            if new_stock != product.get('available_qty'):
-                product['available_qty'] = new_stock
-                changed = True
-            
-            # Si ML lo pausó o cerró, ocultarlo en la tienda
-            if ml_status in ('paused', 'closed') and product.get('visible'):
-                product['visible'] = False
-                print(f"  ⏸  {ml_id}: pausado en ML → ocultado en tienda")
-                paused += 1
-                changed = True
-            
-            if changed:
-                product['updated_at'] = datetime.now().isoformat()
-                updated += 1
 
-    print(f"\n📊 Resumen:")
+            # Si ML pausó o cerró el ítem, desactivar en Firebase
+            if ml["status"] in ("paused", "closed", "under_review"):
+                if item.get("activo", True):
+                    try:
+                        fb_patch(f"tienda_productos/{sku}", {"activo": False})
+                        print(f"  {sku}: ocultado (status ML={ml['status']})")
+                        hidden += 1
+                    except Exception as e:
+                        print(f"  {sku}: error ocultando — {e}")
+                        errors += 1
+                continue
+
+            new_price_base = round(ml["price"], 2)
+            new_stock      = ml["available_quantity"]
+
+            # Actualizar price_base en tienda_productos
+            updates_tienda = {}
+            if item.get("price_base") != new_price_base:
+                updates_tienda["price_base"] = new_price_base
+
+            if updates_tienda:
+                try:
+                    fb_patch(f"tienda_productos/{sku}", updates_tienda)
+                except Exception as e:
+                    print(f"  {sku}: error actualizando precio — {e}")
+                    errors += 1
+                    continue
+
+            # Actualizar stock en /productos/{sku}/
+            try:
+                fb_patch(f"productos/{sku}", {"available_quantity": new_stock})
+            except Exception as e:
+                print(f"  {sku}: error actualizando stock — {e}")
+                errors += 1
+                continue
+
+            print(f"  {sku}: precio=${new_price_base} stock={new_stock}")
+            updated += 1
+
+    print(f"\n=== Resultado ===")
     print(f"  Actualizados: {updated}")
-    print(f"  Pausados:     {paused}")
+    print(f"  Ocultados:    {hidden}")
     print(f"  Errores:      {errors}")
 
-    save_catalog(catalog)
-    print("✅ Sincronización completada\n")
-
-if __name__ == '__main__':
-    sync()
+if __name__ == "__main__":
+    main()
